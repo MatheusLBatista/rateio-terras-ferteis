@@ -1,0 +1,29 @@
+{
+  "name": "rateio-terras-ferteis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "fix": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatheusLBatista/rateio-terras-ferteis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MatheusLBatista/rateio-terras-ferteis/issues"
+  },
+  "homepage": "https://github.com/MatheusLBatista/rateio-terras-ferteis#readme",
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}
