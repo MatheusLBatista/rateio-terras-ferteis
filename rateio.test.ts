@@ -316,3 +316,50 @@ describe("§6 — degeneradas porém válidas não são erro", () => {
     });
   }
 });
+
+describe("R6 — critério de desempate", () => {
+  // Lote de 2 bandejas entre 1 e 3 famílias (soma 4):
+  // A recebe 0 com resto 2, B recebe 1 com resto 2 — empate na fracionária,
+  // e sobra exatamente 1 bandeja para disputar.
+  function disputaPorFamilias(ordem: "direta" | "invertida") {
+    const entrada = [
+      assoc({ nome: "A", familias: 1, cnpj: "11.111.111/0001-11" }),
+      assoc({ nome: "B", familias: 3, cnpj: "22.222.222/0001-22" }),
+    ];
+    return ratearMudas(100, ordem === "direta" ? entrada : [...entrada].reverse());
+  }
+
+  it("R6.1 — empate vai para quem tem menos famílias", () => {
+    const r = disputaPorFamilias("direta");
+    expect(pega(r, "A").bandejas).toBe(1); // levou a bandeja da disputa
+    expect(pega(r, "B").bandejas).toBe(1);
+  });
+
+  it("R6.1 — o vencedor não depende da ordem de entrada", () => {
+    expect(disputaPorFamilias("invertida").distribuicoes).toEqual(
+      disputaPorFamilias("direta").distribuicoes
+    );
+  });
+
+  it("R6.2 — famílias iguais: decide a ordem alfabética em pt-BR", () => {
+    // 3 bandejas entre duas de 1 família: ambas ficam com resto igual.
+    const r = ratearMudas(150, [
+      assoc({ nome: "Alto Alegre", familias: 1 }),
+      assoc({ nome: "Água Boa", familias: 1 }),
+    ]);
+    expect(pega(r, "Água Boa").bandejas).toBe(2); // Á colaciona como A, g < l
+    expect(pega(r, "Alto Alegre").bandejas).toBe(1);
+  });
+
+  it("R6.3 — famílias e nome iguais: decide o menor CNPJ", () => {
+    const r = ratearMudas(150, [
+      assoc({ nome: "Cooperativa", familias: 1, cnpj: "99.999.999/0001-99" }),
+      assoc({ nome: "Cooperativa", familias: 1, cnpj: "11.111.111/0001-11" }),
+    ]);
+    const porCnpj = (cnpj: string) =>
+      r.distribuicoes.find((d) => d.cnpj === cnpj)!.bandejas;
+
+    expect(porCnpj("11.111.111/0001-11")).toBe(2);
+    expect(porCnpj("99.999.999/0001-99")).toBe(1);
+  });
+});

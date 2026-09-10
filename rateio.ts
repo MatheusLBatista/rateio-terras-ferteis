@@ -118,6 +118,21 @@ function compararSaida(a: Distribuicao, b: Distribuicao): number {
   return b.mudas - a.mudas || a.nome.localeCompare(b.nome, "pt-BR");
 }
 
+function compararDisputa(
+  a: { participante: Linha; resto: number },
+  b: { participante: Linha; resto: number }
+): number {
+  const x = a.participante.associacao;
+  const y = b.participante.associacao;
+
+  return (
+    b.resto - a.resto ||
+    x.familias - y.familias ||
+    x.nome.localeCompare(y.nome, "pt-BR") ||
+    x.cnpj.localeCompare(y.cnpj)
+  );
+}
+
 function criarDistribuicao(linha: Linha): Distribuicao {
   const { cnpj, nome } = linha.associacao;
 
@@ -140,7 +155,7 @@ function ratearRespeitandoCotas(loteBandejas: number, elegiveis: Linha[]): void 
     const naoSaturadas = elegiveis.filter((linha) => !linha.saturada);
     if (naoSaturadas.length === 0) return;
 
-    distribuirPorMaioresRestos(bandejasDisponiveis, naoSaturadas);
+    distribuirPorRestos(bandejasDisponiveis, naoSaturadas);
 
     const estouraram = naoSaturadas.filter((l) => l.bandejas > l.cotaBandejas);
     if (estouraram.length === 0) return;
@@ -153,7 +168,7 @@ function ratearRespeitandoCotas(loteBandejas: number, elegiveis: Linha[]): void 
   }
 }
 
-function distribuirPorMaioresRestos(lote: number, ativos: Linha[]): void {
+function distribuirPorRestos(lote: number, ativos: Linha[]): void {
   const somaFamilias = ativos.reduce((s, p) => s + p.associacao.familias, 0);
   if (ativos.length === 0 || somaFamilias <= 0) return;
 
@@ -167,7 +182,7 @@ function distribuirPorMaioresRestos(lote: number, ativos: Linha[]): void {
     return { participante, resto: numerador % somaFamilias };
   });
 
-  comResto.sort((a, b) => b.resto - a.resto);
+  comResto.sort(compararDisputa);
 
   const restantes = lote - alocadas;
   for (let i = 0; i < restantes && i < comResto.length; i++) {
