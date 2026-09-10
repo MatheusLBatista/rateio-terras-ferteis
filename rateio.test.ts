@@ -2,9 +2,14 @@ import { describe, it, expect } from "vitest";
 import type { Associacao } from "./rateio";
 import { MUDAS_POR_BANDEJA, RateioError, ratearMudas } from "./rateio";
 
+// Sequencial, e não derivado do nome: dois nomes de mesmo comprimento gerariam
+// o mesmo CNPJ, o que agora é entrada inválida (CNPJ duplicado).
+let sequencialCnpj = 0;
+
 function assoc(over: Partial<Associacao> & { nome: string }): Associacao {
+  sequencialCnpj += 1;
   return {
-    cnpj: over.cnpj ?? `00.000.000/0001-${over.nome.length.toString().padStart(2, "0")}`,
+    cnpj: over.cnpj ?? `00.000.000/0001-${sequencialCnpj.toString().padStart(2, "0")}`,
     municipio: "Porto Velho",
     familias: 10,
     cotaMaxima: 1_000_000,
@@ -265,4 +270,49 @@ describe("R7 — ordenação da saída", () => {
     const r = ratearMudas(5000, entrada);
     expect(r.distribuicoes).toHaveLength(entrada.length);
   });
+});
+
+describe("§6 — entradas inválidas", () => {
+  const invalidas: Array<[string, () => unknown]> = [
+    ["totalMudas negativo", () => ratearMudas(-1, [])],
+    ["totalMudas NaN", () => ratearMudas(Number.NaN, [])],
+    ["totalMudas fracionário", () => ratearMudas(10.5, [])],
+    ["familias negativa", () => ratearMudas(5000, [assoc({ nome: "A", familias: -1 })])],
+    ["cotaMaxima negativa", () => ratearMudas(5000, [assoc({ nome: "A", cotaMaxima: -1 })])],
+    [
+      "CNPJ duplicado",
+      () =>
+        ratearMudas(5000, [
+          assoc({ nome: "A", cnpj: "11.111.111/0001-11" }),
+          assoc({ nome: "B", cnpj: "11.111.111/0001-11" }),
+        ]),
+    ],
+  ];
+
+  for (const [descricao, executar] of invalidas) {
+    it(`lança RateioError: ${descricao}`, () => {
+      expect(executar).toThrow(RateioError);
+    });
+  }
+
+  it("a mensagem diz qual é o problema", () => {
+    expect(() => ratearMudas(5000, [assoc({ nome: "A", familias: -3 })])).toThrow(
+      /familias/i
+    );
+  });
+});
+
+describe("§6 — degeneradas porém válidas não são erro", () => {
+  const validas: Array<[string, () => unknown]> = [
+    ["lista vazia", () => ratearMudas(18000, [])],
+    ["totalMudas zero", () => ratearMudas(0, [assoc({ nome: "A" })])],
+    ["familias zero", () => ratearMudas(5000, [assoc({ nome: "A", familias: 0 })])],
+    ["cotaMaxima zero", () => ratearMudas(5000, [assoc({ nome: "A", cotaMaxima: 0 })])],
+  ];
+
+  for (const [descricao, executar] of validas) {
+    it(`não lança: ${descricao}`, () => {
+      expect(executar).not.toThrow();
+    });
+  }
 });

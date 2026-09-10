@@ -33,6 +33,33 @@ export class RateioError extends Error {
   }
 }
 
+function validarEntrada(totalMudas: number, associacoes: Associacao[]): void {
+  if (!Number.isInteger(totalMudas) || totalMudas < 0) {
+    throw new RateioError(
+      `totalMudas deve ser um inteiro não negativo; recebido: ${totalMudas}.`
+    );
+  }
+
+  const cnpjsVistos = new Set<string>();
+
+  for (const { cnpj, nome, familias, cotaMaxima } of associacoes) {
+    if (!Number.isInteger(familias) || familias < 0) {
+      throw new RateioError(
+        `${nome}: familias deve ser um inteiro não negativo; recebido: ${familias}.`
+      );
+    }
+    if (!Number.isInteger(cotaMaxima) || cotaMaxima < 0) {
+      throw new RateioError(
+        `${nome}: cotaMaxima deve ser um inteiro não negativo; recebida: ${cotaMaxima}.`
+      );
+    }
+    if (cnpjsVistos.has(cnpj)) {
+      throw new RateioError(`CNPJ duplicado: ${cnpj}. O rateio ficaria ambíguo.`);
+    }
+    cnpjsVistos.add(cnpj);
+  }
+}
+
 export function motivoExclusao(associacao: Associacao): string | undefined {
   if (associacao.situacao != "regular" && associacao.familias <= 0) {
     return `Situação cadastral ${associacao.situacao} e nenhuma família cadastrada.`;
@@ -61,6 +88,8 @@ export function ratearMudas(
   totalMudas: number,
   associacoes: Associacao[]
 ): ResultadoRateio {
+  validarEntrada(totalMudas, associacoes);
+
   const loteBandejas = Math.floor(totalMudas / MUDAS_POR_BANDEJA);
 
   const linhas: Linha[] = associacoes.map((associacao) => ({
