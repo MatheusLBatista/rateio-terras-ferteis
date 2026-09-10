@@ -142,3 +142,68 @@ describe("R4 — maiores restos", () => {
     }
   });
 });
+
+describe("R3/R5 — cota máxima e redistribuição do excedente", () => {
+  it("exemplo 1 do enunciado (saturação em cascata)", () => {
+    const r = ratearMudas(18000, [
+      assoc({ nome: "ASPRORIO", familias: 120, cotaMaxima: 4_000 }),
+      assoc({ nome: "APROPERO", familias: 80, cotaMaxima: 18_000 }),
+      assoc({ nome: "ARUVE", familias: 80, cotaMaxima: 18_000 }),
+      assoc({ nome: "Água Boa", familias: 45, cotaMaxima: 2_000 }),
+      assoc({ nome: "ACRUB", familias: 35, cotaMaxima: 18_000, situacao: "suspensa" }),
+      assoc({ nome: "Alto Alegre", familias: 0, cotaMaxima: 5_000 }),
+    ]);
+
+    expect(pega(r, "APROPERO").bandejas).toBe(120);
+    expect(pega(r, "APROPERO").mudas).toBe(6000);
+    expect(pega(r, "ARUVE").bandejas).toBe(120);
+    expect(pega(r, "ASPRORIO").bandejas).toBe(80);
+    expect(pega(r, "Água Boa").bandejas).toBe(40);
+    expect(pega(r, "ACRUB").bandejas).toBe(0);
+    expect(pega(r, "Alto Alegre").bandejas).toBe(0);
+
+    expect(r.totalDistribuido).toBe(18000);
+    expect(r.sobraNaoDistribuida).toBe(0);
+  });
+
+  it("nenhuma associação ultrapassa a própria cota", () => {
+    const r = ratearMudas(18000, [
+      assoc({ nome: "A", familias: 100, cotaMaxima: 1_000 }),
+      assoc({ nome: "B", familias: 50, cotaMaxima: 500 }),
+      assoc({ nome: "C", familias: 10, cotaMaxima: 100_000 }),
+    ]);
+    expect(pega(r, "A").mudas).toBeLessThanOrEqual(1_000);
+    expect(pega(r, "B").mudas).toBeLessThanOrEqual(500);
+  });
+
+  it("todas saturadas: o que sobra do lote vira sobraNaoDistribuida", () => {
+    const r = ratearMudas(5000, [
+      assoc({ nome: "A", familias: 10, cotaMaxima: 50 }),
+      assoc({ nome: "B", familias: 10, cotaMaxima: 50 }),
+    ]);
+    expect(pega(r, "A").bandejas).toBe(1);
+    expect(pega(r, "B").bandejas).toBe(1);
+    expect(r.totalDistribuido).toBe(100);
+    expect(r.sobraNaoDistribuida).toBe(4900);
+  });
+
+  it("cota menor que uma bandeja satura em zero", () => {
+    const r = ratearMudas(5000, [assoc({ nome: "A", cotaMaxima: 49 })]);
+    expect(pega(r, "A").bandejas).toBe(0);
+    expect(r.totalDistribuido).toBe(0);
+    expect(r.sobraNaoDistribuida).toBe(5000);
+  });
+
+  it("saturação em cascata: liberar excedente satura quem estava dentro da cota", () => {
+    const r = ratearMudas(10000, [
+      assoc({ nome: "A", familias: 100, cotaMaxima: 1_000 }),
+      assoc({ nome: "B", familias: 60, cotaMaxima: 3_500 }),
+      assoc({ nome: "C", familias: 40, cotaMaxima: 500_000 }),
+    ]);
+    expect(pega(r, "A").bandejas).toBe(20);
+    expect(pega(r, "B").bandejas).toBe(70);
+    expect(pega(r, "C").bandejas).toBe(110);
+    expect(r.totalDistribuido).toBe(10000);
+    expect(r.sobraNaoDistribuida).toBe(0);
+  });
+});

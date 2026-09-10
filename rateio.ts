@@ -73,7 +73,7 @@ export function ratearMudas(
 
   const elegiveis = linhas.filter((linha) => linha.motivoExclusao === undefined);
 
-  distribuirPorMaioresRestos(loteBandejas, elegiveis);
+  ratearRespeitandoCotas(loteBandejas, elegiveis);
 
   const distribuicoes = linhas.map(criarDistribuicao);
   const totalDistribuido = distribuicoes.reduce((soma, d) => soma + d.mudas, 0);
@@ -100,6 +100,26 @@ function criarDistribuicao(linha: Linha): Distribuicao {
   };
 }
 
+function ratearRespeitandoCotas(loteBandejas: number, elegiveis: Linha[]): void {
+  let bandejasDisponiveis = loteBandejas;
+  
+  for (let rodada = 0; rodada <= elegiveis.length; rodada++) {
+    const naoSaturadas = elegiveis.filter((linha) => !linha.saturada);
+    if (naoSaturadas.length === 0) return;
+
+    distribuirPorMaioresRestos(bandejasDisponiveis, naoSaturadas);
+
+    const estouraram = naoSaturadas.filter((l) => l.bandejas > l.cotaBandejas);
+    if (estouraram.length === 0) return;
+
+    for (const linha of estouraram) {
+      linha.bandejas = linha.cotaBandejas;
+      linha.saturada = true;
+      bandejasDisponiveis -= linha.cotaBandejas;
+    }
+  }
+}
+
 function distribuirPorMaioresRestos(lote: number, ativos: Linha[]): void {
   const somaFamilias = ativos.reduce((s, p) => s + p.associacao.familias, 0);
   if (ativos.length === 0 || somaFamilias <= 0) return;
@@ -121,5 +141,7 @@ function distribuirPorMaioresRestos(lote: number, ativos: Linha[]): void {
     comResto[i]!.participante.bandejas += 1;
   }
 }
+
+
 
 
