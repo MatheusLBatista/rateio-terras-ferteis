@@ -99,3 +99,27 @@ function criarDistribuicao(linha: Linha): Distribuicao {
     mudas: linha.bandejas * MUDAS_POR_BANDEJA,
   };
 }
+
+function distribuirPorMaioresRestos(lote: number, ativos: Linha[]): void {
+  const somaFamilias = ativos.reduce((s, p) => s + p.associacao.familias, 0);
+  if (ativos.length === 0 || somaFamilias <= 0) return;
+
+  let alocadas = 0;
+  
+  const comResto = ativos.map((participante) => {
+    const numerador = lote * participante.associacao.familias;
+    const inteiro = Math.floor(numerador / somaFamilias);
+    participante.bandejas = inteiro;
+    alocadas += inteiro;
+    return { participante, resto: numerador % somaFamilias };
+  });
+
+  comResto.sort((a, b) => b.resto - a.resto);
+
+  const restantes = lote - alocadas;
+  for (let i = 0; i < restantes && i < comResto.length; i++) {
+    comResto[i]!.participante.bandejas += 1;
+  }
+}
+
+

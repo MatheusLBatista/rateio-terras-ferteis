@@ -87,3 +87,58 @@ describe("pureza", () => {
     expect(ratearMudas(18000, entrada)).toEqual(ratearMudas(18000, entrada));
   });
 });
+
+describe("R4 — maiores restos", () => {
+  it("exemplo 2 do enunciado (sem saturação)", () => {
+    const r = ratearMudas(5180, [
+      assoc({ nome: "Alto Alegre", familias: 10, cotaMaxima: 100_000 }),
+      assoc({ nome: "Água Boa", familias: 10, cotaMaxima: 100_000 }),
+      assoc({ nome: "Boa Esperança", familias: 5, cotaMaxima: 3_000 }),
+    ]);
+
+    expect(pega(r, "Água Boa").bandejas).toBe(41);
+    expect(pega(r, "Alto Alegre").bandejas).toBe(41);
+    expect(pega(r, "Boa Esperança").bandejas).toBe(21);
+    expect(pega(r, "Boa Esperança").mudas).toBe(1050);
+
+    expect(r.totalDistribuido).toBe(5150);
+    expect(r.sobraNaoDistribuida).toBe(30); // R2: as 30 mudas fora da bandeja
+  });
+
+  it("divisão exata não gera sobra de bandeja", () => {
+    const r = ratearMudas(5000, [
+      assoc({ nome: "A", familias: 1 }),
+      assoc({ nome: "B", familias: 1 }),
+    ]);
+    expect(pega(r, "A").bandejas).toBe(50);
+    expect(pega(r, "B").bandejas).toBe(50);
+    expect(r.sobraNaoDistribuida).toBe(0);
+  });
+
+  it("total menor que uma bandeja vai inteiro para a sobra", () => {
+    const r = ratearMudas(49, [assoc({ nome: "A" })]);
+    expect(pega(r, "A").bandejas).toBe(0);
+    expect(r.totalDistribuido).toBe(0);
+    expect(r.sobraNaoDistribuida).toBe(49);
+  });
+
+  it("totalMudas zero é válido", () => {
+    const r = ratearMudas(0, [assoc({ nome: "A" })]);
+    expect(r.totalDistribuido).toBe(0);
+    expect(r.sobraNaoDistribuida).toBe(0);
+  });
+
+  it("R8 — a invariante se mantém", () => {
+    const casos: Array<[number, Associacao[]]> = [
+      [18000, [assoc({ nome: "A", familias: 120 }), assoc({ nome: "B", familias: 7 })]],
+      [5180, [assoc({ nome: "A", familias: 10 }), assoc({ nome: "B", familias: 5 })]],
+      [7, [assoc({ nome: "A" })]],
+      [123456, [assoc({ nome: "A", familias: 3 }), assoc({ nome: "B", familias: 11 }), assoc({ nome: "C", familias: 29 })]],
+    ];
+    for (const [total, lista] of casos) {
+      const r = ratearMudas(total, lista);
+      expect(r.totalDistribuido + r.sobraNaoDistribuida).toBe(total);
+      expect(r.sobraNaoDistribuida).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
