@@ -75,7 +75,7 @@ export function ratearMudas(
 
   ratearRespeitandoCotas(loteBandejas, elegiveis);
 
-  const distribuicoes = linhas.map(criarDistribuicao);
+  const distribuicoes = linhas.map(criarDistribuicao).sort(compararSaida);
   const totalDistribuido = distribuicoes.reduce((soma, d) => soma + d.mudas, 0);
 
   return {
@@ -83,6 +83,10 @@ export function ratearMudas(
     totalDistribuido,
     sobraNaoDistribuida: totalMudas - totalDistribuido,
   };
+}
+
+function compararSaida(a: Distribuicao, b: Distribuicao): number {
+  return b.mudas - a.mudas || a.nome.localeCompare(b.nome, "pt-BR");
 }
 
 function criarDistribuicao(linha: Linha): Distribuicao {

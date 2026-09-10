@@ -207,3 +207,62 @@ describe("R3/R5 — cota máxima e redistribuição do excedente", () => {
     expect(r.sobraNaoDistribuida).toBe(0);
   });
 });
+
+describe("R7 — ordenação da saída", () => {
+  it("exemplo 1: ordena por mudas decrescente e joga as excluídas para o fim", () => {
+    const r = ratearMudas(18000, [
+      assoc({ nome: "ASPRORIO", familias: 120, cotaMaxima: 4_000 }),
+      assoc({ nome: "APROPERO", familias: 80, cotaMaxima: 18_000 }),
+      assoc({ nome: "ARUVE", familias: 80, cotaMaxima: 18_000 }),
+      assoc({ nome: "Água Boa", familias: 45, cotaMaxima: 2_000 }),
+      assoc({ nome: "ACRUB", familias: 35, cotaMaxima: 18_000, situacao: "suspensa" }),
+      assoc({ nome: "Alto Alegre", familias: 0, cotaMaxima: 5_000 }),
+    ]);
+
+    expect(r.distribuicoes.map((d) => d.nome)).toEqual([
+      "APROPERO",    
+      "ARUVE",       
+      "ASPRORIO",    
+      "Água Boa",    
+      "ACRUB",       
+      "Alto Alegre", 
+    ]);
+  });
+
+  it("exemplo 2: desempate alfabético respeita a colação do pt-BR", () => {
+    const r = ratearMudas(5180, [
+      assoc({ nome: "Alto Alegre", familias: 10, cotaMaxima: 100_000 }),
+      assoc({ nome: "Água Boa", familias: 10, cotaMaxima: 100_000 }),
+      assoc({ nome: "Boa Esperança", familias: 5, cotaMaxima: 3_000 }),
+    ]);
+
+    expect(r.distribuicoes.map((d) => d.nome)).toEqual([
+      "Água Boa",
+      "Alto Alegre",
+      "Boa Esperança",
+    ]);
+  });
+
+  it("a ordem da saída não depende da ordem da entrada", () => {
+    const entrada = [
+      assoc({ nome: "C", familias: 5 }),
+      assoc({ nome: "A", familias: 30 }),
+      assoc({ nome: "B", familias: 15 }),
+    ];
+    const direta = ratearMudas(10000, entrada);
+    const invertida = ratearMudas(10000, [...entrada].reverse());
+
+    expect(direta.distribuicoes).toEqual(invertida.distribuicoes);
+    expect(direta.distribuicoes.map((d) => d.nome)).toEqual(["A", "B", "C"]);
+  });
+
+  it("todas as associações recebidas aparecem na saída", () => {
+    const entrada = [
+      assoc({ nome: "A" }),
+      assoc({ nome: "B", situacao: "irregular" }),
+      assoc({ nome: "C", familias: 0 }),
+    ];
+    const r = ratearMudas(5000, entrada);
+    expect(r.distribuicoes).toHaveLength(entrada.length);
+  });
+});
